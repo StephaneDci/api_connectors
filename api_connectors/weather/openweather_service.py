@@ -1,63 +1,19 @@
-# Fichier: api_connectors/weather/openweather_service.py
-
-import json
-import logging
-from typing import Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from api_connectors.database.crud import create_weather_record
+from datetime import datetime
+import json
+
+# Importer le client API de rapport
 from api_connectors.weather.openweather_report import OpenWeatherReport
-from datetime import datetime, timedelta
-
-
-# --- Fonctions Utilitaires (Déplacées de api_server.py) ---
-
-def convert_unix_to_localtime(timestamp: int, timezone_offset: int) -> str:
-    """Convertit un timestamp UNIX UTC en heure locale formatée (HH:MM:SS)."""
-    dt_utc = datetime.utcfromtimestamp(timestamp)
-    # # Ajouter le décalage (offset) de fuseau horaire
-    dt_local = dt_utc + timedelta(seconds=timezone_offset)
-    return dt_local.strftime('%H:%M:%S')
-
-
-def map_weather_data(data: Dict[str, Any], timezone_offset: int) -> Dict[str, Any]:
-    """
-    Mappe les clés de données brutes vers les clés Pydantic attendues
-    et convertit les timestamps.
-    """
-    if not data:
-        print("map_weather_data NO DATA")
-        return {}
-
-
-
-    # Clés principales
-    mapped_data = {
-        'temperature': data.get('temperature'),
-        'description': data.get('description'),
-        'humidite': data.get('humidite'),
-        'vitesse_vent': data.get('vitesse_vent'),
-    }
-
-
-    # Conversion des timestamps pour la météo actuelle
-    if 'sunrise' in data and 'sunset' in data:
-        mapped_data['sunrise_time'] = convert_unix_to_localtime(data['lever_soleil'], timezone_offset)
-        mapped_data['sunset_time'] = convert_unix_to_localtime(data['coucher_soleil'], timezone_offset)
-
-    # Gestion des autres champs (lat, lon, etc.)
-    if 'lat' in data: mapped_data['lat'] = data.get('lat')
-    if 'lon' in data: mapped_data['lon'] = data.get('lon')
-
-    # Le reste du mapping des prévisions et autres champs peut être complexe
-    # et sera traité plus tard. Pour l'instant, nous nous concentrons sur le corps principal.
-
-    return mapped_data
+# Importer le CRUD
+from api_connectors.database import crud
+# Importer les schémas
+from  api_connectors.database.openweather_schema import WeatherRecordCreate, AirPollutionCreate, AirPollutionComponents
 
 
 class WeatherService:
     """
-    Service de gestion des données météo.
-    Encapsule l'appel à l'API externe et la persistance en base de données.
+    Service pour la logique métier (orchestration).
+    Sépare la logique API (api_server) de la logique de persistance (crud).
     """
 
     @staticmethod
@@ -65,91 +21,108 @@ class WeatherService:
             session: AsyncSession,
             location_name: str,
             forecast_limit: int,
-            include_air_quality: bool
-    ) -> Dict[str, Any]:
+            lat: float | None = None,
+            lon: float | None = None,
+            include_air_quality: bool = True
+    ) -> dict:  # Le service retourne le dict brut pour l'API
         """
-        Récupère les données météo, les enregistre dans la base de données,
-        et retourne la réponse formatée pour l'API.
+        Orchestre la récupération, le mapping complexe et la sauvegarde des données météo.
         """
-        print(f"Début de requête météo pour la Location: {location_name}")
 
-        # 1. Appel au client API pour les données
+        # 1. Appel au client API pour les données brutes
+        # (On suppose que OpenWeatherReport gère sa propre clé API)
         report_data = await OpenWeatherReport.fetch(
             city=location_name,
-            forecast_limit=forecast_limit,
+            lat=lat,
+            lon=lon,
+            forecast_limit= forecast_limit,
         )
-
-        if not report_data:
-            return None  # Laisse l'API lever l'exception 404
-
-        # Les données de timezone sont utilisées pour la conversion du lever/coucher du soleil
-        timezone_offset = report_data.get('timezone', 0)
-
-        print(f"report_data")
+        print(f"===============================================================")
+        print(f"report_data retrieved from fetch()")
         print(json.dumps(report_data, indent=2, ensure_ascii=False))
-
-        # 2. Mappage des données météo actuelles
-        mapped_current_weather = map_weather_data(report_data.get('data').get('weather', {}), timezone_offset)
-
-        logging.info(f"mapped_current_weather: {mapped_current_weather}")
-
-        # Préparation des données de localisation
-        location_data = {
-            'city': report_data.get('location', {}).get('city', location_name.split(',')[0]),
-            'country': report_data.get('location', {}).get('country', location_name.split(',')[-1]),
-            'lat': report_data.get('location', {}).get('lat'),
-            'lon': report_data.get('location', {}).get('lon'),
-        }
-
-        logging.info(f"location_data: {location_data}")
+        print(f"===============================================================")
 
 
-        # 3. Préparation et Enregistrement dans la base de données
+        # 2. Logique de MAPPING (Dict brut -> Schémas Pydantic)
+        # C'est la seule couche qui gère les dictionnaires bruts et
+        # les conversions de type.
 
-        # Data for WeatherRecord
-        weather_record_data = {
-            "location_name": location_data['city'],
-            "country_code": location_data['country'],
-            "latitude": location_data['lat'],
-            "longitude": location_data['lon'],
-            "measure_timestamp": report_data.get('data').get('weather').get('dt'),
-            "temperature": mapped_current_weather['temperature'],
-            "description": mapped_current_weather['description'],
-            "humidite": mapped_current_weather['humidite'],
-            "vitesse_vent": mapped_current_weather['vitesse_vent'],
-            "lever_soleil": report_data.get('data').get('weather', {}).get('lever_soleil'),
-            "coucher_soleil": report_data.get('data').get('weather', {}).get('coucher_soleil'),
-        }
+        try:
+            current_weather = report_data.get('data').get("weather", {})
+            location = report_data.get("location", {})
 
-        logging.info(f"weather_record_data: {weather_record_data}")
+            print(f"current_weather")
+            print(json.dumps(current_weather, indent=2, ensure_ascii=False))
+            print(f"______________")
+
+            print(f"location")
+            print(json.dumps(location, indent=2, ensure_ascii=False))
+            print(f"______________")
+
+            # 2a. Mapper les données météo principales
+            weather_schema_data = WeatherRecordCreate(
+                location_name=location.get("city"),
+                location_country=location.get("country"),
+                lat=location.get("lat"),
+                lon=location.get("lon"),
+
+                # Conversion du timestamp UNIX en objet datetime
+                measure_timestamp=datetime.fromtimestamp(current_weather.get("dt")),
+
+                # Accès sécurisé aux données nichées
+                current_temp=current_weather.get("temperature", {}),
+                feels_like=current_weather.get("ressenti", {}),
+                humidity=current_weather.get("humidite", {}),
+                wind_speed=current_weather.get("vitesse_vent", {}),
+                description=current_weather.get("description", ["N/A"]),
+            )
+
+            print(f"weather_schema_data")
+            print(weather_schema_data)
+            print(f"______________")
+
+            # 2b. Mapper les données de pollution (si demandées et présentes)
+            if include_air_quality and "air_pollution" in report_data:
+                air_data = report_data.get("air_pollution", {})
+                components_data = air_data.get("components", {})
+
+                # Création des schémas de pollution
+                air_components_schema = AirPollutionComponents(
+                    co=components_data.get("co"),
+                    no=components_data.get("no"),
+                    no2=components_data.get("no2"),
+                    o3=components_data.get("o3"),
+                    so2=components_data.get("so2"),
+                    pm2_5=components_data.get("pm2_5"),  # Clé JSON = Nom Pydantic
+                    pm10=components_data.get("pm10"),
+                    nh3=components_data.get("nh3"),
+                )
+
+                air_pollution_schema = AirPollutionCreate(
+                    aqi=air_data.get("aqi"),
+                    components=air_components_schema
+                )
+
+                print("3")
+
+                # Lier le schéma de pollution au schéma météo
+                weather_schema_data.air_pollution = air_pollution_schema
+
+        except (KeyError, TypeError, IndexError, AttributeError, ValueError) as e:
+            # Gérer une erreur de mapping si les données de l'API sont invalides
+            # Idéalement, logguer l'erreur ici
+            # logger.error(f"Erreur de mapping des données OpenWeather: {e}")
+            raise ValueError(f"Erreur lors du mapping des données de l'API externe: {e}")
 
 
-        # Data for AirPollutionRecord (if available)
-        air_pollution_data = None
-        if include_air_quality and report_data.get('air_pollution'):
-            print("Récupération Air Quality")
-            aq_data = report_data['air_pollution']
-            print(f"aq_data: {aq_data}")
-            air_pollution_data = {
-                "aqi": aq_data.get('aqi'),
-                "co": aq_data.get('components', {}).get('co'),
-                "no": aq_data.get('components', {}).get('no'),
-                "no2": aq_data.get('components', {}).get('no2'),
-                "o3": aq_data.get('components', {}).get('o3'),
-                "so2": aq_data.get('components', {}).get('so2'),
-                "pm2_5": aq_data.get('components', {}).get('pm2_5'),
-                "pm10": aq_data.get('components', {}).get('pm10'),
-                "nh3": aq_data.get('components', {}).get('nh3'),
-            }
-
-        print(f"air_pollution_data: {air_pollution_data}")
-
-
-        await create_weather_record(
+        # 3. Appel au CRUD avec les schémas Pydantic validés
+        # Nous passons l'objet Pydantic, pas un dictionnaire.
+        await crud.create_weather_record(
             session=session,
-            weather_data=weather_record_data,
-            air_pollution_data=air_pollution_data
+            record_data=weather_schema_data
         )
 
-
+        # 4. Retourner les données brutes à l'API Server
+        # (L'API Server est responsable du formatage final pour l'utilisateur)
         return report_data
+

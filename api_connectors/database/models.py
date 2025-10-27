@@ -37,9 +37,11 @@ class WeatherRecord(Base):
     # Données Météo Actuelles (issues du modèle CurrentWeather)
     # ---------------------------
     current_temp = Column(Float, nullable=True)  # temp
-    weather_description = Column(String, nullable=True)  # description
+    feels_like = Column(Float, nullable=True)  # temp
     humidity = Column(Integer, nullable=True)
     wind_speed = Column(Float, nullable=True)
+    description = Column(String, nullable=True)  # description
+
 
     # ---------------------------
     # Relation un-à-un vers la qualité de l'air
@@ -51,7 +53,7 @@ class WeatherRecord(Base):
         return (
             f"<WeatherRecord("
             f"location='{self.location_name}', "
-            f"temp={self.current_temp} °C, "
+            f"temp={self.temp} °C, "
             f"date={self.measure_timestamp.strftime('%Y-%m-%d %H:%M')})"
             f">"
         )
