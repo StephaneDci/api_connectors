@@ -6,3 +6,7 @@ pytest-asyncio
 fastapi
 aiohttp
 uvicorn
+sqlalchemy[asyncio] # ORM asynchrone
+aiosqlite # pour la persistance
+asyncpg # Driver PostgreSQL asynchrone (alternative à psycopg2-binary pour asyncio)
+coverage # Ajouté pour les rapports de couverture de code (étape Tox)

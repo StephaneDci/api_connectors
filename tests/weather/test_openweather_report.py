@@ -24,7 +24,7 @@ async def test_fetch_async_default_forecast_limit():
         instance.get_forecast.return_value = forecast
         instance.get_air_pollution.return_value = air_pollution
 
-        result = await OpenWeatherReport.fetch(api_key="FakeKey", city="Paris")
+        result = await OpenWeatherReport.fetch(city="Paris")
 
         print(json.dumps(result, indent=2, ensure_ascii=False))
 
@@ -55,7 +55,7 @@ async def test_fetch_async_parameters():
         instance.get_forecast.return_value = forecast
         instance.get_air_pollution.return_value = air_pollution
 
-        result = await OpenWeatherReport.fetch(api_key="FAKE", city="Paris")
+        result = await OpenWeatherReport.fetch(city="Paris")
 
         print(json.dumps(result, indent=2, ensure_ascii=False))
 
@@ -92,16 +92,9 @@ async def test_fetch_async_with_forecast_limit():
         assert len(result["data"]["forecast"]) == LIMIT
 
 
-# ---------------- Test fetch sans API key ----------------
-@pytest.mark.asyncio
-async def test_fetch_missing_api_key():
-    with pytest.raises(ValueError):
-        await OpenWeatherReport.fetch(city="Paris")
-
-
 # ---------------- Test fetch avec paramètres erronés ----------------
 @pytest.mark.asyncio
 async def test_fetch_duplicate_city_and_latlon():
     with pytest.raises(ValueError):
         # On ne doit pas fournir ville ET lat/lon
-        await OpenWeatherReport.fetch(api_key="FAKE", city="Paris", lat=1.11, lon=2.22)
+        await OpenWeatherReport.fetch(city="Paris", lat=1.11, lon=2.22)

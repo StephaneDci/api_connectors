@@ -18,3 +18,4 @@ htmlcov/
 .pytest_cache/
 .DS_Store # MacOS
 Thumbs.db # Windows
+*.db

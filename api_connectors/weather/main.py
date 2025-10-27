@@ -2,8 +2,6 @@ import asyncio
 import json
 from api_connectors.weather.openweather_report import OpenWeatherReport
 
-API_KEY = "17154898968f3f7a101ac2c951ecefa7"  # Remplacer par votre clé
-
 async def main():
 
 
@@ -12,9 +10,8 @@ async def main():
     print(f"\n⏳ Récupération asynchrone des données pour {lat}-{lon} (Paris)...\n")
 
     data = await OpenWeatherReport.fetch(
-        lat=lat,
-        lon=lon,
-        api_key=API_KEY,
+        lat = lat,
+        lon = lon,
         forecast_limit=5
     )
 

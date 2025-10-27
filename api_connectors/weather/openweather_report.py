@@ -2,6 +2,9 @@
 import asyncio
 import time
 from typing import Optional, Dict, Any
+
+from dotenv import load_dotenv, dotenv_values
+
 from .openweather_client import OpenWeatherClient
 from api_connectors.core.logger import get_logger
 from api_connectors.core.utils import convert_unix_to_localtime
@@ -29,7 +32,6 @@ class OpenWeatherReport:
     # -------- Méthode de classe pratique --------
     @classmethod
     async def fetch(cls,
-                    api_key: str = None,
                     city: Optional[str] = None,
                     country: Optional[str] = None,
                     lat: Optional[float] = None,
@@ -39,12 +41,15 @@ class OpenWeatherReport:
         """
         :param city: la ville ( optionnel si on passe les lat/lon)
         :param country: le pays qui correspond à la ville
-        :param api_key: api key pour openweather
         :param kwargs: les keywords arguments
         :return: le rapport méteo
         """
+
+        # Charger les variables d'environnement dès l'importation du module
+        load_dotenv()
+        api_key = dotenv_values().get("OPENWEATHER_API_KEY")
         if not api_key:
-            raise ValueError("api_key is required for OpenWeatherReport.fetch()")
+            raise ValueError("OPENWEATHER_API_KEY is not set in environment variables.")
 
         if city and (lat is not None or lon is not None):
             raise ValueError("Fournir soit `city` (et éventuellement `country`), soit `lat`/`lon`, mais pas les deux.")
@@ -54,7 +59,7 @@ class OpenWeatherReport:
         client = OpenWeatherClient(api_key=api_key, country=country or "FR")
 
         inst = cls(client)
-        return await inst.fetch_all_async(city=city, country=country, **kwargs)
+        return await inst.fetch_all_async(city=city, country=country, lat=lat, lon=lon, **kwargs)
 
     @classmethod
     def from_api_key(cls, api_key: str, country: str = "FR"):
@@ -68,10 +73,11 @@ class OpenWeatherReport:
             "description": data["weather"][0]["description"],
             "temperature": data["main"]["temp"],
             "ressenti": data["main"]["feels_like"],
-            "humidité": data["main"]["humidity"],
+            "humidite": data["main"]["humidity"],
             "vitesse_vent": data["wind"].get("speed"),
             "lever_soleil": convert_unix_to_localtime(data["sys"].get("sunrise"), data.get("timezone")),
-            "coucher_soleil": convert_unix_to_localtime(data["sys"].get("sunset"), data.get("timezone"))
+            "coucher_soleil": convert_unix_to_localtime(data["sys"].get("sunset"), data.get("timezone")),
+            "dt" : data["dt"],
         }
 
     def _filter_forecast(self, item: Dict[str, Any]) -> Dict[str, Any]:
@@ -79,7 +85,7 @@ class OpenWeatherReport:
             "datetime": item.get("dt_txt"),
             "description": item["weather"][0]["description"],
             "temperature": item["main"]["temp"],
-            "humidity": item["main"]["humidity"]
+            "humidite": item["main"]["humidity"]
         }
 
     def _filter_air_pollution(self, data: Dict[str, Any]) -> Dict[str, Any]:
