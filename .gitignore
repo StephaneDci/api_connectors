@@ -1,0 +1,20 @@
+.idea/
+*.iml
+.venv/
+venv/
+env/
+*.egg-info/
+build/
+dist/
+.env
+.flaskenv
+pycache/
+*.pyc
+*.pyd
+*.so
+.coverage
+.tox/
+htmlcov/
+.pytest_cache/
+.DS_Store # MacOS
+Thumbs.db # Windows
