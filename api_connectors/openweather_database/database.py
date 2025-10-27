@@ -6,8 +6,8 @@ from sqlalchemy.orm import DeclarativeBase
 
 # L'URL de connexion sera lue à partir des variables d'environnement.
 # Exemple : 'postgresql+asyncpg://user:password@host:port/dbname'
-# Pour un démarrage simple et asynchrone : 'sqlite+aiosqlite:///./weather_data.db'
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./weather_data.db")
+# Pour un démarrage simple et asynchrone : 'sqlite+aiosqlite:///openweather_database/weather_data.db'
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///api_connectors/openweather_database/weather_data.db")
 
 # Création du moteur de base de données asynchrone
 # 'echo=False' pour ne pas afficher les requêtes SQL en production (à mettre à True en dev)

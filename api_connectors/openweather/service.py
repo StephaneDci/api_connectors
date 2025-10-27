@@ -3,17 +3,18 @@ from datetime import datetime
 import json
 
 # Importer le client API de rapport
-from api_connectors.weather.openweather_report import OpenWeatherReport
+from api_connectors.openweather.report import OpenWeatherReport
 # Importer le CRUD
-from api_connectors.database import crud
+from api_connectors.openweather_database import crud
 # Importer les schémas
-from  api_connectors.database.openweather_schema import WeatherRecordCreate, AirPollutionCreate, AirPollutionComponents
+from openweather.schema import WeatherRecordModel, AirPollutionModel, AirPollutionComponentsModel
 
 
 class WeatherService:
     """
-    Service pour la logique métier (orchestration).
+    Service pour la logique métier.
     Sépare la logique API (api_server) de la logique de persistance (crud).
+    Permet de valider les modèle de données, la présentation et la persistence.
     """
 
     @staticmethod
@@ -60,7 +61,7 @@ class WeatherService:
             print(f"______________")
 
             # 2a. Mapper les données météo principales
-            weather_schema_data = WeatherRecordCreate(
+            weather_schema_data = WeatherRecordModel(
                 location_name=location.get("city"),
                 location_country=location.get("country"),
                 lat=location.get("lat"),
@@ -75,6 +76,8 @@ class WeatherService:
                 humidity=current_weather.get("humidite", {}),
                 wind_speed=current_weather.get("vitesse_vent", {}),
                 description=current_weather.get("description", ["N/A"]),
+                sunrise_time=current_weather.get("lever_soleil"),
+                sunset_time=current_weather.get("coucher_soleil"),
             )
 
             print(f"weather_schema_data")
@@ -82,12 +85,12 @@ class WeatherService:
             print(f"______________")
 
             # 2b. Mapper les données de pollution (si demandées et présentes)
-            if include_air_quality and "air_pollution" in report_data:
-                air_data = report_data.get("air_pollution", {})
+            if include_air_quality and report_data.get('data').get('air_pollution'):
+                air_data = report_data.get('data').get('air_pollution', {})
                 components_data = air_data.get("components", {})
 
                 # Création des schémas de pollution
-                air_components_schema = AirPollutionComponents(
+                air_components_schema = AirPollutionComponentsModel(
                     co=components_data.get("co"),
                     no=components_data.get("no"),
                     no2=components_data.get("no2"),
@@ -98,12 +101,12 @@ class WeatherService:
                     nh3=components_data.get("nh3"),
                 )
 
-                air_pollution_schema = AirPollutionCreate(
+                air_pollution_schema = AirPollutionModel(
                     aqi=air_data.get("aqi"),
                     components=air_components_schema
                 )
 
-                print("3")
+                print(f"air_pollution_schema: {air_pollution_schema}")
 
                 # Lier le schéma de pollution au schéma météo
                 weather_schema_data.air_pollution = air_pollution_schema

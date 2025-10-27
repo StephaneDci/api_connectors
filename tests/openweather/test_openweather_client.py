@@ -3,12 +3,12 @@
 import pytest
 import json
 import os
-from api_connectors.weather.openweather_client import OpenWeatherClient
+from api_connectors.openweather.api_client import OpenWeatherClient
 
 def load_json(filename):
     """Charge un fichier JSON depuis tests/weather/data/"""
     base = os.path.dirname(__file__)
-    path = os.path.join(base, "openweather_test_data", filename)
+    path = os.path.join(base, "test_data", filename)
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 

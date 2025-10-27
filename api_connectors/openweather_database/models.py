@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Index, ForeignKey
 from sqlalchemy.orm import relationship  # Ajout de l'outil de relation
 from datetime import datetime
-from api_connectors.database.database import Base
+from api_connectors.openweather_database.database import Base
 
 
 class WeatherRecord(Base):
@@ -9,6 +9,7 @@ class WeatherRecord(Base):
     Modèle de base de données pour enregistrer les requêtes météo.
     Ce modèle reflète la structure des données 'CurrentWeather' de l'API
     et inclut les champs de localisation pour le tri et l'historique.
+    On l'utilise pour l'API et pour la persistance.
     """
     __tablename__ = "weather_records"
 
@@ -25,6 +26,7 @@ class WeatherRecord(Base):
     # Données de Localisation (issues du modèle Location)
     # ---------------------------
     location_name = Column(String, index=True, nullable=False)  # Index unique sur ce champ pour une recherche rapide
+    location_country = Column(String, nullable=True)
     lat = Column(Float, nullable=True)
     lon = Column(Float, nullable=True)
 
@@ -36,11 +38,13 @@ class WeatherRecord(Base):
     # ---------------------------
     # Données Météo Actuelles (issues du modèle CurrentWeather)
     # ---------------------------
-    current_temp = Column(Float, nullable=True)  # temp
-    feels_like = Column(Float, nullable=True)  # temp
+    current_temp = Column(Float, nullable=True)
+    feels_like = Column(Float, nullable=True)
     humidity = Column(Integer, nullable=True)
     wind_speed = Column(Float, nullable=True)
-    description = Column(String, nullable=True)  # description
+    description = Column(String, nullable=True)
+    sunrise_time = Column(String, nullable=True)
+    sunset_time = Column(String, nullable=True)
 
 
     # ---------------------------
@@ -53,7 +57,7 @@ class WeatherRecord(Base):
         return (
             f"<WeatherRecord("
             f"location='{self.location_name}', "
-            f"temp={self.temp} °C, "
+            f"temp={self.current_temp} °C, "
             f"date={self.measure_timestamp.strftime('%Y-%m-%d %H:%M')})"
             f">"
         )

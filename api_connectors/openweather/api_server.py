@@ -1,52 +1,12 @@
-# Fichier: api_connectors/weather/api_server.py
+# Fichier: api_connectors/openweather/api_server.py
+
 import logging
-from typing import Optional, List, Dict, Any
-
-from fastapi import FastAPI, Depends, HTTPException, Query, Path
-from pydantic import BaseModel, Field
+from typing import Optional
+from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-
 # Imports de la logique de l'application
-from api_connectors.database.database import init_db, get_db_session
-from api_connectors.weather.openweather_service import WeatherService
-
-# --- Définition des Modèles Pydantic pour la Réponse (API Schema) ---
-
-class Location(BaseModel):
-    """Modèle pour les informations de localisation."""
-    city: str
-    country: Optional[str] = None
-    lat: Optional[float] = None
-    lon: Optional[float] = None
-
-class CurrentWeather(BaseModel):
-    """Modèle pour la météo actuelle."""
-    temp: float = Field(..., description="Temperature en Celsius.")
-    description: str = Field(..., description="Courte description de la météo.")
-    humidity: int = Field(..., description="Valeur de l'humidité (%).")
-    wind_speed: float = Field(..., description="Vitesse du vent (m/s).")
-    sunrise_time: Optional[str] = Field(None, description="Heure locale du lever du soleil (HH:MM:SS).")
-    sunset_time: Optional[str] = Field(None, description="Heure locale du coucher du soleil (HH:MM:SS).")
-
-
-class ForecastItem(BaseModel):
-    """Modèle pour un élément de prévision."""
-    dt: int = Field(..., description="Timestamp de la prévision (UNIX time).")
-    temp: float
-    description: str
-
-
-class AirPollution(BaseModel):
-    """Modèle pour la qualité de l'air (AQI)."""
-    aqi: int = Field(..., description="Air Quality Index (1=Bon, 5=Très mauvais).")
-
-
-class WeatherReport(BaseModel):
-    """Modèle de la réponse complète de l'API."""
-    location: Location
-    current_weather: CurrentWeather
-    forecast: List[ForecastItem]
-    air_pollution: Optional[AirPollution] = None
+from api_connectors.openweather_database.database import init_db, get_db_session
+from api_connectors.openweather.service import WeatherService
 
 
 # --- Initialisation de l'application FastAPI ---
@@ -54,9 +14,8 @@ class WeatherReport(BaseModel):
 app = FastAPI(
     title="API Connectors - Weather Service",
     description="Service pour récupérer les données météo et qualité de l'air.",
-    version="0.1.0"
+    version="0.2.0"
 )
-
 
 # --- Gestion des Événements de l'Application ---
 
@@ -93,7 +52,7 @@ async def get_weather_report(
         logging.info(f"Location de la requête: {location}")
         print(f"include_air_quality: {include_air_quality}")
 
-        # Délègue toute la logique métier (appel API, persistance) au service
+        # Délègue toute la logique métier (appel API, validation schéma, persistance) au service
         response_data = await WeatherService.get_and_save_weather_report(
             session=session,
             location_name=location,
