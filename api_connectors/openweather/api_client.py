@@ -12,7 +12,7 @@ class OpenWeatherClient:
     Client pour OpenWeatherMap.
 
     Stocke api_key et un country par défaut (ISO alpha-2).
-    Fournit :
+    Fournit les méthodes pour accéder aux API:
      - get_lat_lon_by_city_name(city, country)
      - reverse_geocode(lat, lon)
      - get_current_weather(city|lat/lon)

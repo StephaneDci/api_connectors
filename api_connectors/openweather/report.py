@@ -1,8 +1,13 @@
-# api_connectors/weather/openweather_report.py
+# api_connectors/openweather/report.py
 import asyncio
 import time
 from typing import Optional, Dict, Any
-from .openweather_client import OpenWeatherClient
+from datetime import datetime
+
+from dotenv import load_dotenv, dotenv_values
+
+from api_connectors.core.config import OPENWEATHER_API_KEY
+from api_connectors.openweather.api_client import OpenWeatherClient
 from api_connectors.core.logger import get_logger
 from api_connectors.core.utils import convert_unix_to_localtime
 
@@ -11,11 +16,13 @@ logger = get_logger(__name__)
 
 class OpenWeatherReport:
     """
-    Agrégateur de données OpenWeather.
-    Fournit :
+    Agrégateur de données OpenWeather pour générer un rapport Json
+    Fournit les méthodes suivantes:
       - instance.fetch_all_async(...)  -> asynchrone, parallélise les appels
       - instance.fetch_all(...)        -> wrapper synchrone (utilise asyncio.run)
       - OpenWeatherReport.fetch(...)   -> méthode de classe pratique (factory)
+    Output:
+        - Une sortie Json représentant les données aggrégées
     """
 
     def __init__(self, client: Optional[OpenWeatherClient] = None, api_key: Optional[str] = None, country: str = "FR"):
@@ -29,7 +36,6 @@ class OpenWeatherReport:
     # -------- Méthode de classe pratique --------
     @classmethod
     async def fetch(cls,
-                    api_key: str = None,
                     city: Optional[str] = None,
                     country: Optional[str] = None,
                     lat: Optional[float] = None,
@@ -39,13 +45,17 @@ class OpenWeatherReport:
         """
         :param city: la ville ( optionnel si on passe les lat/lon)
         :param country: le pays qui correspond à la ville
-        :param api_key: api key pour openweather
         :param kwargs: les keywords arguments
         :return: le rapport méteo
         """
-        if not api_key:
-            raise ValueError("api_key is required for OpenWeatherReport.fetch()")
 
+        api_key = OPENWEATHER_API_KEY
+        if not api_key:
+            raise ValueError("OPENWEATHER_API_KEY is not set in environment variables.")
+
+        # Vérification de l'exclusivité des paramètres fournis:
+        # Soit les coordonnées lattitude / longitude
+        # Soit la ville / pays
         if city and (lat is not None or lon is not None):
             raise ValueError("Fournir soit `city` (et éventuellement `country`), soit `lat`/`lon`, mais pas les deux.")
         if not city and (lat is None or lon is None):
@@ -54,24 +64,24 @@ class OpenWeatherReport:
         client = OpenWeatherClient(api_key=api_key, country=country or "FR")
 
         inst = cls(client)
-        return await inst.fetch_all_async(city=city, country=country, **kwargs)
+        return await inst.fetch_all_async(city=city, country=country, lat=lat, lon=lon, **kwargs)
 
-    @classmethod
-    def from_api_key(cls, api_key: str, country: str = "FR"):
-        """Compatibilité: crée un report directement depuis api_key"""
-        client = OpenWeatherClient(api_key=api_key, country=country)
-        return cls(client)
 
     # -------- Méthodes de filtrage --------
     def _filter_current_weather(self, data: Dict[str, Any]) -> Dict[str, Any]:
+
+        # Récupérer le décalage horaire en secondes
+        timezone_offset = data.get("timezone", 0)
+
         return {
             "description": data["weather"][0]["description"],
             "temperature": data["main"]["temp"],
             "ressenti": data["main"]["feels_like"],
-            "humidité": data["main"]["humidity"],
+            "humidite": data["main"]["humidity"],
             "vitesse_vent": data["wind"].get("speed"),
-            "lever_soleil": convert_unix_to_localtime(data["sys"].get("sunrise"), data.get("timezone")),
-            "coucher_soleil": convert_unix_to_localtime(data["sys"].get("sunset"), data.get("timezone"))
+            "lever_soleil": convert_unix_to_localtime(data["sys"].get("sunrise"), timezone_offset),
+            "coucher_soleil": convert_unix_to_localtime(data["sys"].get("sunset"), timezone_offset),
+            "dt" : data.get("dt")
         }
 
     def _filter_forecast(self, item: Dict[str, Any]) -> Dict[str, Any]:
@@ -79,7 +89,7 @@ class OpenWeatherReport:
             "datetime": item.get("dt_txt"),
             "description": item["weather"][0]["description"],
             "temperature": item["main"]["temp"],
-            "humidity": item["main"]["humidity"]
+            "humidite": item["main"]["humidity"]
         }
 
     def _filter_air_pollution(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -172,7 +182,8 @@ class OpenWeatherReport:
             "location": self._make_location_meta(city, country, resolved_lat, resolved_lon),
             "meta": {
                 "source": "OpenWeather",
-                "fetch_time_s": round(elapsed, 3)
+                "fetch_time_s": round(elapsed, 3),
+                "timestamp": datetime.now().timestamp()
             }
         }
 

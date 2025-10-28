@@ -1,26 +1,28 @@
 import asyncio
 import json
-from api_connectors.weather.openweather_report import OpenWeatherReport
-
-API_KEY = "17154898968f3f7a101ac2c951ecefa7"  # Remplacer par votre clé
+from api_connectors.openweather.report import OpenWeatherReport
 
 async def main():
 
+# Main pour tester la création d'un OpenWeather Report
+
+## Via les coordonnées lat et long
 
     lat = 48.8566
     lon = 2.3522
     print(f"\n⏳ Récupération asynchrone des données pour {lat}-{lon} (Paris)...\n")
 
     data = await OpenWeatherReport.fetch(
-        lat=lat,
-        lon=lon,
-        api_key=API_KEY,
+        lat = lat,
+        lon = lon,
         forecast_limit=5
     )
 
     print(json.dumps(data, indent=2, ensure_ascii=False))
 
-"""    
+
+## Via la ville / pays
+
     city = input("🌍 Entrez le nom de la ville : ").strip()
     country = input("🏳️ Entrez le code du pays (ex: FR, US, JP) [FR par défaut] : ").strip() or "FR"
 
@@ -29,12 +31,10 @@ async def main():
     data = await OpenWeatherReport.fetch(
         city=city,
         country=country,
-        api_key=API_KEY,
         forecast_limit=5
     )
 
     print(json.dumps(data, indent=2, ensure_ascii=False))
-"""
 
 
 # --- Lancement compatible notebooks / PyCharm ---

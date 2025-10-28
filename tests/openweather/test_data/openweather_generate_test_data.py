@@ -1,6 +1,6 @@
 import json
 import os
-from api_connectors.weather.openweather_client import OpenWeatherClient
+from api_connectors.openweather.openweather_client import OpenWeatherClient
 
 client = OpenWeatherClient(api_key=os.getenv("OPENWEATHER_API_KEY"))
 

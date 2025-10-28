@@ -1,11 +1,11 @@
 import pytest
 import json
 from unittest.mock import patch, AsyncMock
-from api_connectors.weather.openweather_report import OpenWeatherReport
+from api_connectors.openweather.report import OpenWeatherReport
 
 # ---------------- Utilitaire pour charger les fichiers JSON ----------------
 def load_json(filename):
-    with open(f"./tests/weather/openweather_test_data/{filename}", "r", encoding="utf-8") as f:
+    with open(f"./tests/openweather/test_data/{filename}", "r", encoding="utf-8") as f:
         return json.load(f)
 
 # ---------------- Test fetch_async ----------------
@@ -18,13 +18,13 @@ async def test_fetch_async_default_forecast_limit():
     air_pollution = load_json("air_pollution_paris.json")
 
     # Patch OpenWeatherClient pour ne pas faire de vrai HTTP
-    with patch("api_connectors.weather.openweather_report.OpenWeatherClient") as MockClient:
+    with patch("api_connectors.openweather.report.OpenWeatherClient") as MockClient:
         instance = MockClient.return_value
         instance.get_current_weather.return_value = current_weather
         instance.get_forecast.return_value = forecast
         instance.get_air_pollution.return_value = air_pollution
 
-        result = await OpenWeatherReport.fetch(api_key="FakeKey", city="Paris")
+        result = await OpenWeatherReport.fetch(city="Paris")
 
         print(json.dumps(result, indent=2, ensure_ascii=False))
 
@@ -49,13 +49,13 @@ async def test_fetch_async_parameters():
     air_pollution = load_json("air_pollution_paris.json")
 
     # Patch OpenWeatherClient pour ne pas faire de vrai HTTP
-    with patch("api_connectors.weather.openweather_report.OpenWeatherClient") as MockClient:
+    with patch("api_connectors.openweather.report.OpenWeatherClient") as MockClient:
         instance = MockClient.return_value
         instance.get_current_weather.return_value = current_weather
         instance.get_forecast.return_value = forecast
         instance.get_air_pollution.return_value = air_pollution
 
-        result = await OpenWeatherReport.fetch(api_key="FAKE", city="Paris")
+        result = await OpenWeatherReport.fetch(city="Paris")
 
         print(json.dumps(result, indent=2, ensure_ascii=False))
 
@@ -80,7 +80,7 @@ async def test_fetch_async_with_forecast_limit():
     forecast = load_json("forecast_paris.json")
     air_pollution = load_json("air_pollution_paris.json")
 
-    with patch("api_connectors.weather.openweather_report.OpenWeatherClient") as MockClient:
+    with patch("api_connectors.openweather.report.OpenWeatherClient") as MockClient:
         instance = MockClient.return_value
         instance.get_current_weather.return_value = current_weather
         instance.get_forecast.return_value = forecast
@@ -92,16 +92,9 @@ async def test_fetch_async_with_forecast_limit():
         assert len(result["data"]["forecast"]) == LIMIT
 
 
-# ---------------- Test fetch sans API key ----------------
-@pytest.mark.asyncio
-async def test_fetch_missing_api_key():
-    with pytest.raises(ValueError):
-        await OpenWeatherReport.fetch(city="Paris")
-
-
 # ---------------- Test fetch avec paramètres erronés ----------------
 @pytest.mark.asyncio
 async def test_fetch_duplicate_city_and_latlon():
     with pytest.raises(ValueError):
         # On ne doit pas fournir ville ET lat/lon
-        await OpenWeatherReport.fetch(api_key="FAKE", city="Paris", lat=1.11, lon=2.22)
+        await OpenWeatherReport.fetch(city="Paris", lat=1.11, lon=2.22)
