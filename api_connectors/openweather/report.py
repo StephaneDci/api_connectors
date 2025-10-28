@@ -151,7 +151,7 @@ class OpenWeatherReport:
         if (lat is None or lon is None) and city:
             # try to resolve coordinates (sync call executed in thread)
             try:
-                resolved_lat, resolved_lon = await self._call_in_thread(self.client.get_lat_lon_by_city_name, city, country)
+                resolved_lat, resolved_lon = await self.client.get_lat_lon_by_city_name(city, country)
             except Exception:
                 # ignore: meta will be partial
                 resolved_lat, resolved_lon = None, None

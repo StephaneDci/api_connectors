@@ -1,9 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from .models import WeatherRecord, AirPollutionRecord
-from api_connectors.openweather.schema import WeatherRecordModel
+from api_connectors.openweather.schema import WeatherRecordDBModel
 
 
-async def create_weather_record(session: AsyncSession, record_data: WeatherRecordModel) -> WeatherRecord:
+async def create_weather_record(session: AsyncSession, record_data: WeatherRecordDBModel) -> WeatherRecord:
     """
     Crée et sauvegarde un nouvel enregistrement météo et son enregistrement
     de pollution de l'air associé, en utilisant les schémas Pydantic.
