@@ -7,7 +7,7 @@ from api_connectors.openweather.report import OpenWeatherReport
 # Importer le CRUD
 from api_connectors.openweather_database import crud
 # Importer les schémas
-from openweather.schema import WeatherRecordModel, AirPollutionModel, AirPollutionComponentsModel
+from api_connectors.openweather.schema import WeatherRecordModel, AirPollutionModel, AirPollutionComponentsModel
 
 
 class WeatherService:
@@ -32,7 +32,8 @@ class WeatherService:
 
         # 1. Appel au client API pour les données brutes
         # (On suppose que OpenWeatherReport gère sa propre clé API)
-        report_data = await OpenWeatherReport.fetch(
+        r = OpenWeatherReport()
+        report_data = await r.fetch_all_async(
             city=location_name,
             lat=lat,
             lon=lon,

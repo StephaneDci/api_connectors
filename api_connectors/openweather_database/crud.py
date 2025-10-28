@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from .models import WeatherRecord, AirPollutionRecord
-from openweather.schema import WeatherRecordModel
+from api_connectors.openweather.schema import WeatherRecordModel
 
 
 async def create_weather_record(session: AsyncSession, record_data: WeatherRecordModel) -> WeatherRecord:
