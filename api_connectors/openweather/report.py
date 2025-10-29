@@ -1,10 +1,9 @@
 # api_connectors/openweather/report.py
+
 import asyncio
 import time
 from typing import Optional, Dict, Any
 from datetime import datetime
-
-from dotenv import load_dotenv, dotenv_values
 
 from api_connectors.core.config import OPENWEATHER_API_KEY
 from api_connectors.openweather.api_client import OpenWeatherClient

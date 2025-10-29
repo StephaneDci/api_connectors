@@ -19,8 +19,7 @@ async def create_weather_record(session: AsyncSession, record_data: WeatherRecor
     # 1. Préparer les données AirPollution (si elles existent)
     db_air_pollution = None
     if record_data.air_pollution:
-        # Pydantic v2 .model_dump() / v1 .dict()
-        # Récupère le dictionnaire des composants
+        # Récupère les composants
         components_data = record_data.air_pollution.components.model_dump()
 
         db_air_pollution = AirPollutionRecord(

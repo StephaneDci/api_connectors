@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from typing import Optional, List
 
@@ -8,10 +8,7 @@ from typing import Optional, List
 # comme 'pm2_5' (qui ne sont pas des noms de variables valides)
 # Bien que Pydantic v2 gère cela, utiliser des noms valides est plus propre.
 
-
-
 # --- Schéma pour Persistance en Database ---
-
 
 class AirPollutionComponentsModel(BaseModel):
     """Composants détaillés de la pollution de l'air"""
@@ -24,8 +21,8 @@ class AirPollutionComponentsModel(BaseModel):
     pm10: float     = Field(..., description="Сoncentration of PM10 (Coarse particulate matter), μg/m3")
     nh3: float      = Field(..., description="Сoncentration of NH3 (Ammonia), μg/m3")
 
-    class Config:
-        orm_mode = True  # Permet de mapper depuis des objets ORM
+
+    model_config = ConfigDict(from_attributes=True)  # <-- C'est ce qui remplace orm_mode
 
 
 class AirPollutionModel(BaseModel):
@@ -33,6 +30,7 @@ class AirPollutionModel(BaseModel):
     aqi: int = Field(..., description=" Air Quality Index. Possible values: 1, 2, 3, 4, 5. "
                                       "Where 1 = Good, 2 = Fair, 3 = Moderate, 4 = Poor, 5 = Very Poor.")
     components: AirPollutionComponentsModel  = Field(..., description="Composés organiques")
+
 
 class WeatherRecordDBModel(BaseModel):
     """

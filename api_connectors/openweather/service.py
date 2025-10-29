@@ -1,20 +1,19 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime
 import json
-
-# Importer le client API de rapport
+from api_connectors.core.logger import get_logger
 from api_connectors.openweather.report import OpenWeatherReport
-# Importer le CRUD
 from api_connectors.openweather_database import crud
-# Importer les schémas
 from api_connectors.openweather.schema import *
+
+
+log = get_logger(__name__)
 
 
 class WeatherService:
     """
-    Service pour la logique métier.
+    Service pour la logique métier:
     Sépare la logique API (api_server) de la logique de persistance (crud).
-    Permet de valider les modèle de données et la présentation
+    Permet de valider les modèles de données et la présentation
     """
 
     # ------Méthode Post
@@ -81,9 +80,8 @@ class WeatherService:
             city=city,
             country = country
         )
-        print(f"---------------------------------------------------------------")
-        print(json.dumps(report_data, indent=2, ensure_ascii=False))
-        print(f"---------------------------------------------------------------")
+
+        log.info(json.dumps(report_data, indent=2, ensure_ascii=False))
 
         # 2. Logique de MAPPING (Dict brut -> Schémas Pydantic)
         # C'est la  couche qui gère les dictionnaires bruts et les conversions de type.
@@ -151,7 +149,7 @@ class WeatherService:
                 air_pollution = air_pollution_schema
             )
 
-            print(f"weather_report: {weather_report}")
+            log.info(f"weather_report: {weather_report}")
 
         except (KeyError, TypeError, IndexError, AttributeError, ValueError) as e:
             # Gérer une erreur de mapping si les données de l'API sont invalides
