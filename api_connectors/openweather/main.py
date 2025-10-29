@@ -4,25 +4,7 @@ from api_connectors.openweather.report import OpenWeatherReport
 
 async def main():
 
-# Main pour tester la création d'un OpenWeather Report
-
-## Via les coordonnées lat et long
-
-    lat = 48.8566
-    lon = 2.3522
-    print(f"\n⏳ Récupération asynchrone des données pour {lat}-{lon} (Paris)...\n")
-
-    data = await OpenWeatherReport.fetch(
-        lat = lat,
-        lon = lon,
-        forecast_limit=5
-    )
-
-    print(json.dumps(data, indent=2, ensure_ascii=False))
-
-
 ## Via la ville / pays
-
     city = input("🌍 Entrez le nom de la ville : ").strip()
     country = input("🏳️ Entrez le code du pays (ex: FR, US, JP) [FR par défaut] : ").strip() or "FR"
 
@@ -35,6 +17,25 @@ async def main():
     )
 
     print(json.dumps(data, indent=2, ensure_ascii=False))
+
+
+    # Main pour tester la création d'un OpenWeather Report
+    ## Via les coordonnées lat et long
+
+"""
+    lat = 48.8566
+    lon = 2.3522
+    print(f"\n⏳ Récupération asynchrone des données pour {lat}-{lon} (Paris)...\n")
+
+    data = await OpenWeatherReport.fetch(
+        lat = lat,
+        lon = lon,
+        forecast_limit=5
+    )
+
+    print(json.dumps(data, indent=2, ensure_ascii=False))
+
+"""
 
 
 # --- Lancement compatible notebooks / PyCharm ---

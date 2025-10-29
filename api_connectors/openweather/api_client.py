@@ -1,6 +1,6 @@
 # api_connectors/weather/openweather_client.py
 from typing import Optional, Tuple, Dict, Any
-from api_connectors.core.http_client import HTTPClient
+from api_connectors.core.httpx_client import HTTPClient
 from api_connectors.core.logger import get_logger
 from api_connectors.core.exceptions import APIError
 
@@ -45,7 +45,7 @@ class OpenWeatherClient:
             raise ValueError("Vous devez fournir soit `city`, soit `lat` ET `lon`.")
 
     # ---------------- Géocoding helpers ----------------
-    def get_lat_lon_by_city_name(self, city: str, country: Optional[str] = None) -> Tuple[float, float]:
+    async def get_lat_lon_by_city_name(self, city: str, country: Optional[str] = None) -> Tuple[float, float]:
         """
         Utilise la Geocoding API OpenWeather pour convertir 'city,country' en (lat, lon).
         Retourne (lat, lon) ou lève ValueError si introuvable.
@@ -55,7 +55,7 @@ class OpenWeatherClient:
 
         logger.debug("Récupération des coordonnées : %s,%s", city, country)
         try:
-            data = self.http.get("/geo/1.0/direct", params=params)
+            data = await self.http.get("/geo/1.0/direct", params=params)
         except APIError as e:
             logger.debug("Erreur geocoding: %s", e)
             raise
@@ -71,14 +71,14 @@ class OpenWeatherClient:
         self._validate_coordinates_values(lat, lon)
         return lat, lon
 
-    def reverse_geocode(self, lat: float, lon: float) -> Tuple[Optional[str], Optional[str]]:
+    async def reverse_geocode(self, lat: float, lon: float) -> Tuple[Optional[str], Optional[str]]:
         """
         Reverse geocoding : retourne (city, country) si disponible.
         """
         self._validate_coordinates_values(lat, lon)
         params = {"lat": lat, "lon": lon, "limit": 1, "appid": self.api_key}
         try:
-            data = self.http.get("/geo/1.0/reverse", params=params)
+            data = await self.http.get("/geo/1.0/reverse", params=params)
         except APIError:
             raise
         if not data or not isinstance(data, list) or len(data) == 0:
@@ -87,7 +87,7 @@ class OpenWeatherClient:
         return first.get("name"), first.get("country")
 
     # ---------------- Résolution de coordonnées ----------------
-    def _resolve_coordinates(self, city: Optional[str], country: Optional[str], lat: Optional[float], lon: Optional[float]) -> Tuple[float, float]:
+    async def _resolve_coordinates(self, city: Optional[str], country: Optional[str], lat: Optional[float], lon: Optional[float]) -> Tuple[float, float]:
         """
         Retourne (lat, lon) à utiliser pour les appels d'API.
         Valide les entrées et appelle la geocoding API si nécessaire.
@@ -101,49 +101,49 @@ class OpenWeatherClient:
             return lat, lon
 
         # sinon on a city défini
-        return self.get_lat_lon_by_city_name(city, country)
+        return await self.get_lat_lon_by_city_name(city, country)
 
     # ---------------- Endpoints ----------------
-    def get_current_weather(self, city: Optional[str] = None, country: Optional[str] = None,
+    async def get_current_weather(self, city: Optional[str] = None, country: Optional[str] = None,
                             lat: Optional[float] = None, lon: Optional[float] = None, units: str = "metric", lang: str = "fr") -> Dict[str, Any]:
         """
         Récupère la météo actuelle pour la position résolue.
         """
-        lat, lon = self._resolve_coordinates(city, country, lat, lon)
+        lat, lon = await self._resolve_coordinates(city, country, lat, lon)
         params = {"lat": lat, "lon": lon, "appid": self.api_key, "units": units, "lang": lang}
         logger.debug("GET current weather | lat=%s lon=%s", lat, lon)
         try:
-            return self.http.get("/data/2.5/weather", params=params)
+            return await self.http.get("/data/2.5/weather", params=params)
         except APIError as e:
             if "401" in str(e):
                 raise APIError("Invalid API key for Current Weather API.")
             raise
 
-    def get_forecast(self, city: Optional[str] = None, country: Optional[str] = None,
+    async def get_forecast(self, city: Optional[str] = None, country: Optional[str] = None,
                      lat: Optional[float] = None, lon: Optional[float] = None, units: str = "metric", lang: str = "fr") -> Dict[str, Any]:
         """
         Récupère le forecast 3h (endpoint 5-days/3h).
         """
-        lat, lon = self._resolve_coordinates(city, country, lat, lon)
+        lat, lon = await self._resolve_coordinates(city, country, lat, lon)
         params = {"lat": lat, "lon": lon, "appid": self.api_key, "units": units, "lang": lang}
         logger.debug("GET forecast | lat=%s lon=%s", lat, lon)
         try:
-            return self.http.get("/data/2.5/forecast", params=params)
+            return await self.http.get("/data/2.5/forecast", params=params)
         except APIError as e:
             if "401" in str(e):
                 raise APIError("Invalid API key for Forecast API.")
             raise
 
-    def get_air_pollution(self, city: Optional[str] = None, country: Optional[str] = None,
+    async def get_air_pollution(self, city: Optional[str] = None, country: Optional[str] = None,
                           lat: Optional[float] = None, lon: Optional[float] = None) -> Dict[str, Any]:
         """
         Récupère la qualité de l'air (endpoint air_pollution).
         """
-        lat, lon = self._resolve_coordinates(city, country, lat, lon)
+        lat, lon = await self._resolve_coordinates(city, country, lat, lon)
         params = {"lat": lat, "lon": lon, "appid": self.api_key}
         logger.debug("GET air pollution | lat=%s lon=%s", lat, lon)
         try:
-            return self.http.get("/data/2.5/air_pollution", params=params)
+            return await self.http.get("/data/2.5/air_pollution", params=params)
         except APIError as e:
             if "401" in str(e):
                 raise APIError("Invalid API key or plan restrictions for Air Pollution API.")

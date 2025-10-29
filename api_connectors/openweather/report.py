@@ -1,10 +1,9 @@
 # api_connectors/openweather/report.py
+
 import asyncio
 import time
 from typing import Optional, Dict, Any
 from datetime import datetime
-
-from dotenv import load_dotenv, dotenv_values
 
 from api_connectors.core.config import OPENWEATHER_API_KEY
 from api_connectors.openweather.api_client import OpenWeatherClient
@@ -28,8 +27,9 @@ class OpenWeatherReport:
     def __init__(self, client: Optional[OpenWeatherClient] = None, api_key: Optional[str] = None, country: str = "FR"):
         if client is None:
             if not api_key:
-                raise ValueError("Provide either an OpenWeatherClient or an api_key.")
-            client = OpenWeatherClient(api_key=api_key, country=country)
+                client = OpenWeatherClient(api_key=OPENWEATHER_API_KEY, country=country)
+            else:
+                client = OpenWeatherClient(api_key=api_key, country=country)
         self.client = client
 
 
@@ -107,14 +107,6 @@ class OpenWeatherReport:
             "lon": lon
         }
 
-    # -------- Partie asynchrone --------
-    async def _call_in_thread(self, func, *args, **kwargs):
-        """
-        Exécute une méthode synchrone dans un thread pool ; supporte kwargs.
-        """
-        logger.debug("Lancement en thread: %s args=%s kwargs=%s", getattr(func, "__name__", str(func)), args, kwargs)
-        return await asyncio.to_thread(func, *args, **kwargs)
-
     async def fetch_all_async(
         self,
         city: Optional[str] = None,
@@ -132,17 +124,17 @@ class OpenWeatherReport:
         # Préparation des tâches selon les flags
         tasks = []
         if include_weather:
-            tasks.append(self._call_in_thread(self.client.get_current_weather, city=city, country=country, lat=lat, lon=lon))
+            tasks.append(self.client.get_current_weather(city=city, country=country, lat=lat, lon=lon))
         if include_forecast:
-            tasks.append(self._call_in_thread(self.client.get_forecast, city=city, country=country, lat=lat, lon=lon))
+            tasks.append(self.client.get_forecast(city=city, country=country, lat=lat, lon=lon))
         if include_air:
-            tasks.append(self._call_in_thread(self.client.get_air_pollution, city=city, country=country, lat=lat, lon=lon))
+            tasks.append(self.client.get_air_pollution(city=city, country=country, lat=lat, lon=lon))
 
         if not tasks:
             return {}
 
         start = time.perf_counter()
-        results = await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
         elapsed = time.perf_counter() - start
         logger.debug("fetch_all_async completed in %.3fs", elapsed)
 
@@ -158,7 +150,7 @@ class OpenWeatherReport:
         if (lat is None or lon is None) and city:
             # try to resolve coordinates (sync call executed in thread)
             try:
-                resolved_lat, resolved_lon = await self._call_in_thread(self.client.get_lat_lon_by_city_name, city, country)
+                resolved_lat, resolved_lon = await self.client.get_lat_lon_by_city_name(city, country)
             except Exception:
                 # ignore: meta will be partial
                 resolved_lat, resolved_lon = None, None
