@@ -101,7 +101,6 @@ class WeatherService:
             forecast_items = report_data.get("data").get("forecast")
             forecast_models = [ForecastItemModel(**item) for item in forecast_items]
 
-
             # c) Mapping des données Modèle météo
             current_weather = report_data.get('data').get("weather", {})
 
@@ -158,4 +157,3 @@ class WeatherService:
 
         # 4. Retourner les données mises en forme à l'API Server
         return weather_report
-

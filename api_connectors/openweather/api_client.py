@@ -1,4 +1,5 @@
 # api_connectors/openweather/api_client.py
+
 import httpx
 from api_connectors.core.exceptions import NetworkOrServerError
 from typing import Optional, Tuple, Dict, Any
@@ -14,12 +15,13 @@ class OpenWeatherClient:
     Client pour OpenWeatherMap.
 
     Stocke api_key et un country par défaut (ISO alpha-2).
+
     Fournit les méthodes pour accéder aux API:
-     - get_lat_lon_by_city_name(city, country)
-     - reverse_geocode(lat, lon)
-     - get_current_weather(city|lat/lon)
-     - get_forecast(city|lat/lon)
-     - get_air_pollution(city|lat/lon)
+     - get_lat_lon_by_city_name(city, country)  https://openweathermap.org/api/geocoding-api
+     - reverse_geocode(lat, lon)                https://openweathermap.org/api/geocoding-api
+     - get_current_weather(city|lat/lon)        https://openweathermap.org/current
+     - get_forecast(city|lat/lon)               https://openweathermap.org/forecast5
+     - get_air_pollution(city|lat/lon)          https://openweathermap.org/api/air-pollution
     """
 
     BASE_URL = "https://api.openweathermap.org"
@@ -96,7 +98,8 @@ class OpenWeatherClient:
         return first.get("name"), first.get("country")
 
     # ---------------- Résolution de coordonnées ----------------
-    async def _resolve_coordinates(self, city: Optional[str], country: Optional[str], lat: Optional[float], lon: Optional[float]) -> Tuple[float, float]:
+    async def _resolve_coordinates(self, city: Optional[str], country: Optional[str],
+                                   lat: Optional[float], lon: Optional[float]) -> Tuple[float, float]:
         """
         Retourne (lat, lon) à utiliser pour les appels d'API.
         Valide les entrées et appelle la geocoding API si nécessaire.
@@ -114,7 +117,8 @@ class OpenWeatherClient:
 
     # ---------------- Endpoints ----------------
     async def get_current_weather(self, city: Optional[str] = None, country: Optional[str] = None,
-                            lat: Optional[float] = None, lon: Optional[float] = None, units: str = "metric", lang: str = "fr") -> Dict[str, Any]:
+                                  lat: Optional[float] = None, lon: Optional[float] = None,
+                                  units: str = "metric", lang: str = "fr") -> Dict[str, Any]:
         """
         Récupère la météo actuelle pour la position résolue.
         """
@@ -132,7 +136,8 @@ class OpenWeatherClient:
             raise
 
     async def get_forecast(self, city: Optional[str] = None, country: Optional[str] = None,
-                     lat: Optional[float] = None, lon: Optional[float] = None, units: str = "metric", lang: str = "fr") -> Dict[str, Any]:
+                           lat: Optional[float] = None, lon: Optional[float] = None,
+                           units: str = "metric", lang: str = "fr") -> Dict[str, Any]:
         """
         Récupère le forecast 3h (endpoint 5-days/3h).
         """
@@ -150,7 +155,7 @@ class OpenWeatherClient:
             raise
 
     async def get_air_pollution(self, city: Optional[str] = None, country: Optional[str] = None,
-                          lat: Optional[float] = None, lon: Optional[float] = None) -> Dict[str, Any]:
+                                lat: Optional[float] = None, lon: Optional[float] = None) -> Dict[str, Any]:
         """
         Récupère la qualité de l'air (endpoint air_pollution).
         """

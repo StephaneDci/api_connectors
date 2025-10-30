@@ -44,6 +44,8 @@ class OpenWeatherReport:
         """
         :param city: la ville ( optionnel si on passe les lat/lon)
         :param country: le pays qui correspond à la ville
+        :param lat: (optionnel si city,country fournis) : lattitude
+        :param lon: (optionnel si city,country fournis) : longitude
         :param kwargs: les keywords arguments
         :return: le rapport météo
         """

@@ -2,7 +2,7 @@
 import pytest
 import json
 import os
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 from api_connectors.openweather.api_client import OpenWeatherClient
 
 
@@ -13,12 +13,10 @@ def load_json(filename):
     # NOTE: Assurez-vous que le chemin d'accès au fichier est correct
     # Si 'test_data' est au même niveau que le fichier de test, utilisez simplement le chemin relatif.
     base = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(base, "test_data", filename)
 
     # Tentative d'accès à un répertoire plus sûr (si test_data est au même niveau que le fichier de test)
     # Dans un environnement de projet classique, si tests/weather/test_data existe :
     # path = os.path.join(base, "test_data", filename)
-    # Pour le moment, nous gardons le chemin tel quel, mais soyez vigilant au chemin de test_data.
     path = os.path.join(os.path.dirname(base), "test_data", filename)
     if not os.path.exists(path):
         # Fallback au cas où le chemin est incorrect
