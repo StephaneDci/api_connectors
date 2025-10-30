@@ -27,13 +27,14 @@ AsyncSessionLocal = async_sessionmaker(
 class Base(AsyncAttrs, DeclarativeBase):
     pass
 
+# Partie Supprimée car remplaçée par Alembic
 # Fonction utilitaire pour créer la structure de la base de données
 # Elle doit être appelée au démarrage de l'application FastAPI
-async def init_db():
-    async with engine.begin() as conn:
-        # Créer toutes les tables qui héritent de Base
-        # Note: Les modèles doivent être importés avant cet appel pour être reconnus.
-        await conn.run_sync(Base.metadata.create_all)
+#async def init_db():
+#    async with engine.begin() as conn:
+#        # Créer toutes les tables qui héritent de Base
+#        # Note: Les modèles doivent être importés avant cet appel pour être reconnus.
+#        await conn.run_sync(Base.metadata.create_all)
 
 # Fonction utilitaire de dépendance pour FastAPI (Dependency Injection)
 # Elle fournit une nouvelle session pour chaque requête d'API

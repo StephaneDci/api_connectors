@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from httpx import ConnectError
 
 # Imports de la logique de l'application et des modèles (ORM / API)
-from api_connectors.openweather_database.database import init_db, get_db_session
+from api_connectors.openweather_database.database import get_db_session
 from api_connectors.openweather.service import WeatherService
 from api_connectors.openweather.schema import WeatherReportModel, WeatherRecordDBModel
 
@@ -25,8 +25,9 @@ async def lifespan(app: FastAPI):
     Gère les événements de démarrage et d'arrêt de l'application (remplace on_event).
     """
     # Événement de Démarrage (Startup)
-    await init_db()
-    log.info("Initialisation de la base de données terminée.")
+    # Remplaçé par Alembic
+    #    await init_db()
+    #    log.info("Initialisation de la base de données terminée.")
 
     yield  # L'application démarre ici
 
