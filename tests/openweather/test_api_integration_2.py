@@ -22,7 +22,7 @@ try:
         MOCK_AIR_POLLUTION_ROME = json.load(f)
 
     MOCK_GEO_ROME = [{"name": "Rome", "lat": ROME_COORDS["lat"], "lon": ROME_COORDS["lon"], "country": "IT"}]
-    print(f"MOCK_GEO_ROME chargé: {MOCK_GEO_ROME}")
+    print("OK: Mock chargés")
 
 except FileNotFoundError:
     print("ERREUR: Fichiers de MOCK (Rome) non trouvés. Les mocks retourneront des valeurs vides.")
@@ -40,7 +40,6 @@ def mock_http_client_get():
             if params and 'q' in params:
                 query = params['q']
                 if 'Rome' in query or 'ROME' in query or 'rome' in query or 'Rome,IT' == query:
-                    print(MOCK_GEO_ROME)
                     return MOCK_GEO_ROME
             return []  # <-- Si la requête ne correspond pas, retourne []
 

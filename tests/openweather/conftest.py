@@ -5,7 +5,6 @@ from pytest_asyncio import fixture as async_fixture
 from fastapi.testclient import TestClient
 
 # Imports pour les dépendances de FastAPI
-from fastapi import Depends
 from api_connectors.openweather.api_server import app, get_db_session
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from api_connectors.openweather_database.database import Base
@@ -87,4 +86,3 @@ def override_db_dependency(TestingSessionLocal):
 
     # Rétablit l'original
     app.dependency_overrides.pop(get_db_session)
-

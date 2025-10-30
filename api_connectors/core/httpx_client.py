@@ -1,4 +1,4 @@
-import httpx  # Remplacer requests par httpx
+import httpx
 from .exceptions import APIError
 from .logger import get_logger
 from typing import Dict, Any

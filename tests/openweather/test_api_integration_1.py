@@ -23,7 +23,7 @@ try:
     Paris_CURRENT_TEMP = MOCK_CURRENT_WEATHER_Paris.get('main').get('temp')
 
     MOCK_GEO_Paris = [{"name": "Paris", "lat": Paris_COORDS["lat"], "lon": Paris_COORDS["lon"], "country": "IT"}]
-    print(f"MOCK_GEO_Paris chargé: {MOCK_GEO_Paris}")
+    print("OK: Mock chargés")
 
 except FileNotFoundError:
     print("ERREUR: Fichiers de MOCK (Paris) non trouvés. Les mocks retourneront des valeurs vides.")
@@ -41,7 +41,6 @@ def mock_http_client_get():
             if params and 'q' in params:
                 query = params['q']
                 if 'Paris' in query or 'Paris' in query or 'Paris' in query or 'Paris,IT' == query:
-                    print(MOCK_GEO_Paris)
                     return MOCK_GEO_Paris
             return []  # <-- Si la requête ne correspond pas, retourne []
 

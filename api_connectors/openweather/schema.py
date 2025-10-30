@@ -21,7 +21,6 @@ class AirPollutionComponentsModel(BaseModel):
     pm10: float     = Field(..., description="Сoncentration of PM10 (Coarse particulate matter), μg/m3")
     nh3: float      = Field(..., description="Сoncentration of NH3 (Ammonia), μg/m3")
 
-
     model_config = ConfigDict(from_attributes=True)  # <-- C'est ce qui remplace orm_mode
 
 
