@@ -3,9 +3,10 @@
 from dotenv import load_dotenv
 import os
 
-load_dotenv()  # charge les variables du fichier .env
+load_dotenv()
 
-OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
-
-if not OPENWEATHER_API_KEY:
-    raise ValueError("Missing OPENWEATHER_API_KEY in environment variables")
+def get_openweather_api_key() -> str:
+    key = os.getenv("OPENWEATHER_API_KEY")
+    if not key:
+        raise RuntimeError("OPENWEATHER_API_KEY manquante. Définir la var d'environnement ou passer en mode mock.")
+    return key

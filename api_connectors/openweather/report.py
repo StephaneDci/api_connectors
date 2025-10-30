@@ -5,7 +5,7 @@ import time
 from typing import Optional, Dict, Any
 from datetime import datetime
 
-from api_connectors.core.config import OPENWEATHER_API_KEY
+from api_connectors.core.config import get_openweather_api_key
 from api_connectors.openweather.api_client import OpenWeatherClient
 from api_connectors.core.logger import get_logger
 from api_connectors.core.utils import convert_unix_to_localtime
@@ -27,7 +27,8 @@ class OpenWeatherReport:
     def __init__(self, client: Optional[OpenWeatherClient] = None, api_key: Optional[str] = None, country: str = "FR"):
         if client is None:
             if not api_key:
-                client = OpenWeatherClient(api_key=OPENWEATHER_API_KEY, country=country)
+                api_key = get_openweather_api_key()
+                client = OpenWeatherClient(api_key=api_key, country=country)
             else:
                 client = OpenWeatherClient(api_key=api_key, country=country)
         self.client = client
@@ -50,9 +51,7 @@ class OpenWeatherReport:
         :return: le rapport météo
         """
 
-        api_key = OPENWEATHER_API_KEY
-        if not api_key:
-            raise ValueError("OPENWEATHER_API_KEY is not set in environment variables.")
+        api_key = get_openweather_api_key()
 
         # Vérification de l'exclusivité des paramètres fournis:
         # Soit les coordonnées lattitude / longitude
@@ -201,10 +200,11 @@ class OpenWeatherReport:
 
         return {"data": out, **out_meta}
 
-    # -------- Wrapper synchrone --------
-    def fetch_all(self, *args, **kwargs) -> Dict[str, Any]:
-        """
-        Wrapper synchrone. Attention : si tu appelles depuis une boucle asyncio active,
-        tu dois utiliser fetch_all_async() directement.
-        """
-        return asyncio.run(self.fetch_all_async(*args, **kwargs))
+
+#    # -------- Wrapper synchrone ( Obsolète )--------
+#    def fetch_all(self, *args, **kwargs) -> Dict[str, Any]:
+#        """
+#        Wrapper synchrone. Attention : si tu appelles depuis une boucle asyncio active,
+#        tu dois utiliser fetch_all_async() directement.
+#        """
+#        return asyncio.run(self.fetch_all_async(*args, **kwargs))
