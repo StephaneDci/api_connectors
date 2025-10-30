@@ -58,6 +58,8 @@ class WeatherRecord(Base):
             f"<WeatherRecord("
             f"location='{self.location_name}', "
             f"temp={self.current_temp} °C, "
+            f"description={self.description}, "
+            f"vitesse vent={self.wind_speed} km/h, "
             f"date={self.measure_timestamp.strftime('%Y-%m-%d %H:%M')})"
             f">"
         )

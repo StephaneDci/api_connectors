@@ -25,9 +25,9 @@ def load_json(filename):
 @pytest.mark.asyncio
 async def test_fetch_async_default_forecast_limit():
     # Charger les données mockées
-    current_weather = load_json("current_weather_paris.json")
-    forecast = load_json("forecast_paris.json")
-    air_pollution = load_json("air_pollution_paris.json")
+    current_weather = load_json("current_weather_Paris.json")
+    forecast = load_json("forecast_Paris.json")
+    air_pollution = load_json("air_pollution_Paris.json")
 
     # Patch OpenWeatherClient pour ne pas faire de vrai HTTP
     with patch("api_connectors.openweather.report.OpenWeatherClient") as MockClient:
@@ -58,9 +58,9 @@ async def test_fetch_async_default_forecast_limit():
 @pytest.mark.asyncio
 async def test_fetch_async_parameters():
     # Charger les données mockées
-    current_weather = load_json("current_weather_paris.json")
-    forecast = load_json("forecast_paris.json")
-    air_pollution = load_json("air_pollution_paris.json")
+    current_weather = load_json("current_weather_Paris.json")
+    forecast = load_json("forecast_Paris.json")
+    air_pollution = load_json("air_pollution_Paris.json")
 
     # Patch OpenWeatherClient pour ne pas faire de vrai HTTP
     with patch("api_connectors.openweather.report.OpenWeatherClient") as MockClient:
@@ -93,9 +93,9 @@ async def test_fetch_async_with_forecast_limit():
     api_key = "FAKE_KEY"
     LIMIT = 5
 
-    current_weather = load_json("current_weather_paris.json")
-    forecast = load_json("forecast_paris.json")
-    air_pollution = load_json("air_pollution_paris.json")
+    current_weather = load_json("current_weather_Paris.json")
+    forecast = load_json("forecast_Paris.json")
+    air_pollution = load_json("air_pollution_Paris.json")
 
     # Le patch doit englober l'instanciation si l'OpenWeatherClient est instancié à l'intérieur
     with patch("api_connectors.openweather.report.OpenWeatherClient") as MockClient:

@@ -1,4 +1,6 @@
-# api_connectors/weather/openweather_client.py
+# api_connectors/openweather/api_client.py
+import httpx
+from api_connectors.core.exceptions import NetworkOrServerError
 from typing import Optional, Tuple, Dict, Any
 from api_connectors.core.httpx_client import HTTPClient
 from api_connectors.core.logger import get_logger
@@ -54,8 +56,11 @@ class OpenWeatherClient:
         params = {"q": f"{city},{country}", "limit": 1, "appid": self.api_key}
 
         logger.debug("Récupération des coordonnées : %s,%s", city, country)
+
         try:
             data = await self.http.get("/geo/1.0/direct", params=params)
+        except httpx.ConnectError as e:
+            raise NetworkOrServerError(f"Impossible de se connecter à l'API OpenWeather: {e}") from e
         except APIError as e:
             logger.debug("Erreur geocoding: %s", e)
             raise
@@ -77,10 +82,14 @@ class OpenWeatherClient:
         """
         self._validate_coordinates_values(lat, lon)
         params = {"lat": lat, "lon": lon, "limit": 1, "appid": self.api_key}
+
         try:
             data = await self.http.get("/geo/1.0/reverse", params=params)
+        except httpx.ConnectError as e:
+            raise NetworkOrServerError(f"Impossible de se connecter à l'API OpenWeather: {e}") from e
         except APIError:
             raise
+
         if not data or not isinstance(data, list) or len(data) == 0:
             return None, None
         first = data[0]
@@ -112,8 +121,11 @@ class OpenWeatherClient:
         lat, lon = await self._resolve_coordinates(city, country, lat, lon)
         params = {"lat": lat, "lon": lon, "appid": self.api_key, "units": units, "lang": lang}
         logger.debug("GET current weather | lat=%s lon=%s", lat, lon)
+
         try:
             return await self.http.get("/data/2.5/weather", params=params)
+        except httpx.ConnectError as e:
+            raise NetworkOrServerError(f"Impossible de se connecter à l'API OpenWeather: {e}") from e
         except APIError as e:
             if "401" in str(e):
                 raise APIError("Invalid API key for Current Weather API.")
@@ -127,8 +139,11 @@ class OpenWeatherClient:
         lat, lon = await self._resolve_coordinates(city, country, lat, lon)
         params = {"lat": lat, "lon": lon, "appid": self.api_key, "units": units, "lang": lang}
         logger.debug("GET forecast | lat=%s lon=%s", lat, lon)
+
         try:
             return await self.http.get("/data/2.5/forecast", params=params)
+        except httpx.ConnectError as e:
+            raise NetworkOrServerError(f"Impossible de se connecter à l'API OpenWeather: {e}") from e
         except APIError as e:
             if "401" in str(e):
                 raise APIError("Invalid API key for Forecast API.")
@@ -142,8 +157,11 @@ class OpenWeatherClient:
         lat, lon = await self._resolve_coordinates(city, country, lat, lon)
         params = {"lat": lat, "lon": lon, "appid": self.api_key}
         logger.debug("GET air pollution | lat=%s lon=%s", lat, lon)
+
         try:
             return await self.http.get("/data/2.5/air_pollution", params=params)
+        except httpx.ConnectError as e:
+            raise NetworkOrServerError(f"Impossible de se connecter à l'API OpenWeather: {e}") from e
         except APIError as e:
             if "401" in str(e):
                 raise APIError("Invalid API key or plan restrictions for Air Pollution API.")
