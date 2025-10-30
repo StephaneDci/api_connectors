@@ -56,7 +56,7 @@ class TestOpenWeatherClientOffline:
         mock_geo = [{"lat": 48.8566, "lon": 2.3522}]
 
         # Si vous utilisez un `try/except` pour le load_json, assurez-vous qu'il réussisse
-        mock_weather = load_json("current_weather_paris.json")
+        mock_weather = load_json("current_weather_Paris.json")
 
         # 1. Mock de la méthode de géocodage qui est maintenant ASYNCHRONE
         self.client.get_lat_lon_by_city_name = AsyncMock(
@@ -77,7 +77,7 @@ class TestOpenWeatherClientOffline:
     async def test_get_forecast(self):
         """Test prévisions 5 jours / 3h avec mock (asynchrone)"""
         mock_geo = [{"lat": 48.8566, "lon": 2.3522}]
-        mock_forecast = load_json("forecast_paris.json")
+        mock_forecast = load_json("forecast_Paris.json")
 
         self.client.get_lat_lon_by_city_name = AsyncMock(
             return_value=(mock_geo[0]["lat"], mock_geo[0]["lon"])
@@ -96,7 +96,7 @@ class TestOpenWeatherClientOffline:
     async def test_get_air_pollution(self):
         """Test qualité de l'air avec mock (asynchrone)"""
         mock_geo = [{"lat": 48.8566, "lon": 2.3522}]
-        mock_air = load_json("air_pollution_paris.json")
+        mock_air = load_json("air_pollution_Paris.json")
 
         self.client.get_lat_lon_by_city_name = AsyncMock(
             return_value=(mock_geo[0]["lat"], mock_geo[0]["lon"])

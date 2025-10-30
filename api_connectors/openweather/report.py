@@ -32,7 +32,6 @@ class OpenWeatherReport:
                 client = OpenWeatherClient(api_key=api_key, country=country)
         self.client = client
 
-
     # -------- Méthode de classe pratique --------
     @classmethod
     async def fetch(cls,
@@ -46,7 +45,7 @@ class OpenWeatherReport:
         :param city: la ville ( optionnel si on passe les lat/lon)
         :param country: le pays qui correspond à la ville
         :param kwargs: les keywords arguments
-        :return: le rapport méteo
+        :return: le rapport météo
         """
 
         api_key = OPENWEATHER_API_KEY
@@ -66,7 +65,6 @@ class OpenWeatherReport:
         inst = cls(client)
         return await inst.fetch_all_async(city=city, country=country, lat=lat, lon=lon, **kwargs)
 
-
     # -------- Méthodes de filtrage --------
     def _filter_current_weather(self, data: Dict[str, Any]) -> Dict[str, Any]:
 
@@ -81,7 +79,7 @@ class OpenWeatherReport:
             "vitesse_vent": data["wind"].get("speed"),
             "lever_soleil": convert_unix_to_localtime(data["sys"].get("sunrise"), timezone_offset),
             "coucher_soleil": convert_unix_to_localtime(data["sys"].get("sunset"), timezone_offset),
-            "dt" : data.get("dt")
+            "dt": data.get("dt")
         }
 
     def _filter_forecast(self, item: Dict[str, Any]) -> Dict[str, Any]:
@@ -99,7 +97,8 @@ class OpenWeatherReport:
         }
 
     # -------- Helpers pour normalisation de la sortie --------
-    def _make_location_meta(self, city: Optional[str], country: Optional[str], lat: Optional[float], lon: Optional[float]) -> Dict[str, Any]:
+    def _make_location_meta(self, city: Optional[str], country: Optional[str], lat: Optional[float],
+                            lon: Optional[float]) -> Dict[str, Any]:
         return {
             "city": city,
             "country": country,
@@ -108,15 +107,15 @@ class OpenWeatherReport:
         }
 
     async def fetch_all_async(
-        self,
-        city: Optional[str] = None,
-        country: Optional[str] = None,
-        lat: Optional[float] = None,
-        lon: Optional[float] = None,
-        include_weather: bool = True,
-        include_forecast: bool = True,
-        include_air: bool = True,
-        forecast_limit: Optional[int] = 10,
+            self,
+            city: Optional[str] = None,
+            country: Optional[str] = None,
+            lat: Optional[float] = None,
+            lon: Optional[float] = None,
+            include_weather: bool = True,
+            include_forecast: bool = True,
+            include_air: bool = True,
+            forecast_limit: Optional[int] = 10,
     ) -> Dict[str, Any]:
         """
         Lance en parallèle les appels demandés et renvoie un résultat normalisé.
@@ -134,7 +133,14 @@ class OpenWeatherReport:
             return {}
 
         start = time.perf_counter()
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        # ✅ CORRECTION : Ne pas utiliser return_exceptions=True
+        # Si une erreur se produit, elle sera levée immédiatement
+        try:
+            results = await asyncio.gather(*tasks)
+        except Exception as e:
+            logger.error(f"Error fetching weather data: {e}", exc_info=True)
+            raise
+
         elapsed = time.perf_counter() - start
         logger.debug("fetch_all_async completed in %.3fs", elapsed)
 
@@ -148,19 +154,28 @@ class OpenWeatherReport:
         resolved_lat = lat
         resolved_lon = lon
         if (lat is None or lon is None) and city:
-            # try to resolve coordinates (sync call executed in thread)
+            # try to resolve coordinates
             try:
                 resolved_lat, resolved_lon = await self.client.get_lat_lon_by_city_name(city, country)
-            except Exception:
-                # ignore: meta will be partial
+            except Exception as e:
+                logger.warning(f"Could not resolve coordinates for {city},{country}: {e}")
                 resolved_lat, resolved_lon = None, None
 
+        # ✅ CORRECTION : Vérifier que le résultat n'est pas une exception
         if include_weather:
-            raw_weather = results[idx]; idx += 1
+            raw_weather = results[idx]
+            idx += 1
+            if isinstance(raw_weather, Exception):
+                logger.error(f"Weather data fetch failed: {raw_weather}")
+                raise raw_weather
             out["weather"] = self._filter_current_weather(raw_weather)
 
         if include_forecast:
-            raw_forecast = results[idx]; idx += 1
+            raw_forecast = results[idx]
+            idx += 1
+            if isinstance(raw_forecast, Exception):
+                logger.error(f"Forecast data fetch failed: {raw_forecast}")
+                raise raw_forecast
             forecast_list = raw_forecast.get("list", [])
             if forecast_limit is not None:
                 forecast_list = forecast_list[:forecast_limit]
@@ -168,6 +183,9 @@ class OpenWeatherReport:
 
         if include_air:
             raw_air = results[idx]
+            if isinstance(raw_air, Exception):
+                logger.error(f"Air pollution data fetch failed: {raw_air}")
+                raise raw_air
             out["air_pollution"] = self._filter_air_pollution(raw_air)
 
         out_meta = {
@@ -188,5 +206,3 @@ class OpenWeatherReport:
         tu dois utiliser fetch_all_async() directement.
         """
         return asyncio.run(self.fetch_all_async(*args, **kwargs))
-
-
